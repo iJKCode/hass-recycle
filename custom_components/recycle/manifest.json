@@ -1,0 +1,11 @@
+{
+  "codeowners": ["@iJKCode", "@LeroyVDotBe"],
+  "config_flow": false,
+  "dependencies": [],
+  "documentation": "https://github.com/iJKCode/hass-recycle",
+  "domain": "recycle",
+  "iot_class": "cloud_polling",
+  "name": "Recycle!",
+  "requirements": [],
+  "version": "0.1.0"
+}
