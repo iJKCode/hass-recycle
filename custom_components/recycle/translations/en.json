@@ -1,0 +1,36 @@
+{
+  "config": {
+    "error": {
+      "address": "The address is invalid."
+    },
+    "step": {
+      "user": {
+        "title": "Add Recycle! Address",
+        "description": "Enter address IDs from https://data.vlaanderen.be",
+        "data": {
+          "name": "Name",
+          "zipcode": "Zip Code",
+          "town_id": "Town Id",
+          "street_id": "Street Id",
+          "house_nr": "House Nr",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
+      }
+    }
+  },
+  "options": {
+    "error": {
+      "address": "The address is invalid."
+    },
+    "step": {
+      "user": {
+        "title": "Manage Recycle! Configuration",
+        "description": "Enter address IDs from data.vlaanderen.be",
+        "data": {
+          "scan_interval": "Update interval (min)"
+        }
+      }
+    }
+  }
+}
