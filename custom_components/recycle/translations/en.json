@@ -1,7 +1,11 @@
 {
   "config": {
     "error": {
-      "address": "The address is invalid."
+      "address": "The address is invalid.",
+      "already_configured": "Address is already configured"
+    },
+    "abort": {
+      "already_configured": "Address is already configured"
     },
     "step": {
       "user": {
@@ -20,15 +24,11 @@
     }
   },
   "options": {
-    "error": {
-      "address": "The address is invalid."
-    },
     "step": {
       "user": {
-        "title": "Manage Recycle! Configuration",
-        "description": "",
         "data": {
-          "scan_interval": "Update interval (min)"
+          "collections_timeframe": "Future collections timeframe [days]",
+          "scan_interval": "Update interval [min]"
         }
       }
     }

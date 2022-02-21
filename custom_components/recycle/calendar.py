@@ -16,6 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> bool:
     """Set up Recycle! calendars from a config entry."""
+    _LOGGER.debug('Setting up calendar config entry: %s', entry.unique_id)
+
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([
         RecycleCalendarDevice(coordinator)
@@ -25,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
     def __init__(self, coordinator):
-        super().__init__(coordinator, suffix='Collections')
+        super().__init__(coordinator, suffix='Collections', unique_id='collections')
 
     @property
     def event(self):

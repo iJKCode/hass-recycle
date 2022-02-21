@@ -136,7 +136,7 @@ class ApiClient:
 
     async def get_endpoint(self, endpoint: str, params=None, limit: int = None, page: int = None) -> any:
         if limit is not None:
-            params['size'] = limit if limit is not None else 200
+            params['size'] = limit if limit < 200 else 200
         if page is not None:
             params['page'] = page
 

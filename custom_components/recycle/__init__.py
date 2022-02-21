@@ -17,8 +17,9 @@ from .const import (
     CONF_CITY_ID,
     CONF_STREET_ID,
     CONF_HOUSE_NR,
+    CONF_COLLECTIONS_TIMEFRAME,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_COLLECTIONS_INTERVAL,
+    DEFAULT_COLLECTIONS_TIMEFRAME,
     DOMAIN,
     PLATFORMS,
 )
@@ -34,20 +35,23 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Recycle! component from a config entry."""
-    _LOGGER.debug('Setting up config entry: %s', entry.title)
+    _LOGGER.debug('Setting up config entry: %s', entry.unique_id)
 
     session = async_get_clientsession(hass)
     client = ApiClient(session=session)
     address = ApiAddress(
-        zipcode=entry.data[CONF_ZIPCODE],
-        city_id=entry.data[CONF_CITY_ID],
-        street_id=entry.data[CONF_STREET_ID],
-        house_nr=entry.data[CONF_HOUSE_NR],
-        latitude=entry.data[CONF_LATITUDE],
-        longitude=entry.data[CONF_LONGITUDE],
+        zipcode=entry.data.get(CONF_ZIPCODE),
+        city_id=entry.data.get(CONF_CITY_ID),
+        street_id=entry.data.get(CONF_STREET_ID),
+        house_nr=entry.data.get(CONF_HOUSE_NR),
+        latitude=entry.data.get(CONF_LATITUDE),
+        longitude=entry.data.get(CONF_LONGITUDE),
+    )
+    collections_timeframe = entry.options.get(
+        CONF_COLLECTIONS_TIMEFRAME, DEFAULT_COLLECTIONS_TIMEFRAME
     )
 
-    coordinator = RecycleDataUpdateCoordinator(hass, api_client=client, api_address=address)
+    coordinator = RecycleDataUpdateCoordinator(hass, api_client=client, api_address=address, collections_timeframe=collections_timeframe)
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator

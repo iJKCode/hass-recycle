@@ -1,5 +1,4 @@
 """Config flow for Recycle! integration."""
-from typing import Dict
 
 import voluptuous as vol
 
@@ -17,6 +16,8 @@ from .const import (
     CONF_CITY_ID,
     CONF_STREET_ID,
     CONF_HOUSE_NR,
+    CONF_COLLECTIONS_TIMEFRAME,
+    DEFAULT_COLLECTIONS_TIMEFRAME,
     DOMAIN,
 )
 
@@ -39,9 +40,9 @@ class RecycleConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(self, user_input: Dict[str, any] = None) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, any] = None) -> FlowResult:
         """Invoked when a user initiates a flow via the user interface"""
-        errors: Dict[str, str] = {}
+        errors: dict[str, str] = {}
         if user_input is not None:
             if not await validate_address(user_input, self.hass):
                 errors['base'] = 'address'
@@ -56,6 +57,16 @@ class RecycleConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     CONF_LATITUDE: user_input.get(CONF_LATITUDE),
                     CONF_LONGITUDE: user_input.get(CONF_LONGITUDE),
                 }
+                unique_id = '{}-{}-{}-{}'.format(
+                    user_input.get(CONF_ZIPCODE),
+                    user_input.get(CONF_CITY_ID),
+                    user_input.get(CONF_STREET_ID),
+                    user_input.get(CONF_HOUSE_NR),
+                )
+
+                await self.async_set_unique_id(unique_id=unique_id)
+                self._abort_if_unique_id_configured()
+
                 return self.async_create_entry(title=name, data=data)
         else:
             user_input = {}
@@ -63,13 +74,13 @@ class RecycleConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         default_name = 'Recycle {}'.format(self.hass.config.location_name)
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_NAME, default=user_input.get(CONF_NAME, default_name)): cv.string,
+                vol.Required(CONF_NAME, default=user_input.get(CONF_NAME, default=default_name)): cv.string,
                 vol.Required(CONF_ZIPCODE, default=user_input.get(CONF_ZIPCODE)): cv.positive_int,
                 vol.Required(CONF_CITY_ID, default=user_input.get(CONF_CITY_ID)): cv.positive_int,
                 vol.Required(CONF_STREET_ID, default=user_input.get(CONF_STREET_ID)): cv.positive_int,
                 vol.Required(CONF_HOUSE_NR, default=user_input.get(CONF_HOUSE_NR)): cv.positive_int,
-                vol.Optional(CONF_LATITUDE, default=user_input.get(CONF_LATITUDE, self.hass.config.latitude)): cv.latitude,
-                vol.Optional(CONF_LONGITUDE, default=user_input.get(CONF_LONGITUDE, self.hass.config.longitude)): cv.longitude,
+                vol.Optional(CONF_LATITUDE, default=user_input.get(CONF_LATITUDE, default=self.hass.config.latitude)): cv.latitude,
+                vol.Optional(CONF_LONGITUDE, default=user_input.get(CONF_LONGITUDE, default=self.hass.config.longitude)): cv.longitude,
             }
         )
 
@@ -89,16 +100,26 @@ class RecycleOptionFlowHandler(OptionsFlow):
         super().__init__()
         self.config_entry = entry
 
-    async def async_step_init(self, user_input: Dict[str, any] = None) -> Dict[str, any]:
+    async def async_step_init(self, user_input: dict[str, any] = None) -> FlowResult:
         """Manage the Recycle! component options"""
         return await self.async_step_user()
 
     async def async_step_user(self, user_input: dict[str, any] = None) -> FlowResult:
         if user_input is not None:
-            return self.async_create_entry(title='', data=user_input)
+            data = {
+                CONF_COLLECTIONS_TIMEFRAME: user_input.get(CONF_COLLECTIONS_TIMEFRAME),
+            }
+
+            return self.async_create_entry(title='', data=data)
 
         data_schema = vol.Schema({
             # @TODO add fraction filter options
+            vol.Optional(
+                CONF_COLLECTIONS_TIMEFRAME,
+                default=self.config_entry.options.get(
+                    CONF_COLLECTIONS_TIMEFRAME, DEFAULT_COLLECTIONS_TIMEFRAME
+                ),
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=70)),
         })
 
         return self.async_show_form(step_id='user', data_schema=data_schema, errors={})
