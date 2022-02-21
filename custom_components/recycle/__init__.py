@@ -1,24 +1,30 @@
-"""The Recycle! integration."""
-
-from datetime import timedelta
-from typing import Any
-
-import voluptuous as vol
+"""Recycle! integration."""
+import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_SCAN_INTERVAL
+from homeassistant.const import (
+    CONF_LATITUDE,
+    CONF_LONGITUDE
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
+from .api import ApiClient, ApiAddress
 from .entity import RecycleDataUpdateCoordinator
 from .const import (
-    SCAN_INTERVAL,
+    CONF_ZIPCODE,
+    CONF_CITY_ID,
+    CONF_STREET_ID,
+    CONF_HOUSE_NR,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_COLLECTIONS_INTERVAL,
     DOMAIN,
-    LOGGER,
     PLATFORMS,
 )
+
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Recycle! component."""
@@ -28,21 +34,32 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Recycle! component from a config entry."""
-    LOGGER.debug("Setting up config entry: %s", entry.unique_id)
+    _LOGGER.debug('Setting up config entry: %s', entry.title)
 
     session = async_get_clientsession(hass)
-    coordinator = RecycleDataUpdateCoordinator(hass, session, SCAN_INTERVAL, None)
+    client = ApiClient(session=session)
+    address = ApiAddress(
+        zipcode=entry.data[CONF_ZIPCODE],
+        city_id=entry.data[CONF_CITY_ID],
+        street_id=entry.data[CONF_STREET_ID],
+        house_nr=entry.data[CONF_HOUSE_NR],
+        latitude=entry.data[CONF_LATITUDE],
+        longitude=entry.data[CONF_LONGITUDE],
+    )
 
+    coordinator = RecycleDataUpdateCoordinator(hass, api_client=client, api_address=address)
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(async_update_options))
+
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Recycle! component from a config entry."""
-    LOGGER.debug("Unloading config entry: %s", entry.unique_id)
+    _LOGGER.debug('Unloading config entry: %s', entry.title)
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         del hass.data[DOMAIN][entry.entry_id]
@@ -51,4 +68,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update Recycle! component options"""
+    _LOGGER.debug('Updating config options: %s', entry.title)
     await hass.config_entries.async_reload(entry.entry_id)
