@@ -7,7 +7,11 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Coor
 
 from .api import ApiClient, ApiAddress
 from .api_model import Collection, Fraction, Communication
-from .const import DOMAIN, DEFAULT_SCAN_INTERVAL, DEFAULT_COLLECTIONS_TIMEFRAME
+from .const import (
+    COLLECTIONS_TIMEFRAME,
+    DOMAIN,
+    SCAN_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,14 +24,15 @@ class RecycleDataUpdateCoordinator(DataUpdateCoordinator[None]):
             hass: HomeAssistant,
             api_client: ApiClient,
             api_address: ApiAddress,
-            update_interval: timedelta = DEFAULT_SCAN_INTERVAL,
-            collections_timeframe: int = DEFAULT_COLLECTIONS_TIMEFRAME,
+            fractions_ignore: list[str] = None,
+            collections_timeframe: int = None,
     ) -> None:
         """Initialize the coordinator."""
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=update_interval)
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=SCAN_INTERVAL)
         self.api_client = api_client
         self.api_address = api_address
-        self.collections_timeframe = collections_timeframe
+        self.fractions_ignore = fractions_ignore or []
+        self.collections_timeframe = collections_timeframe or COLLECTIONS_TIMEFRAME
 
         self.collections: list[Collection] = []
         self.fractions: dict[str, Fraction] = {}
@@ -35,7 +40,7 @@ class RecycleDataUpdateCoordinator(DataUpdateCoordinator[None]):
 
     async def _async_update_data(self) -> None:
         """Update data from Recycle! api."""
-        _LOGGER.debug('Fetching recycle information for: {}'.format(self.config_entry.entry_id))
+        _LOGGER.debug('Fetching recycle information for: {}'.format(self.api_address))
 
         timeframe = timedelta(days=self.collections_timeframe)
         self.collections = await self.api_client.get_collections(self.api_address, time_delta=timeframe)

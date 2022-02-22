@@ -31,7 +31,7 @@ class Organisation:
     name: str
     short_name: str
     url: str
-    logo: list[Image]
+    logos: list[Image]
     description: str
     zipcode_ids: list[ZipCodeId]
     isIC: bool
@@ -50,7 +50,7 @@ class Variation:
 class Fraction:
     id: str
     name: str
-    logo: list[Image]
+    logos: list[Image]
     color: str
     national: bool | None = field(default=None)
     organisation_id: str | None = field(default=None)
@@ -60,6 +60,7 @@ class Fraction:
 @dataclass(frozen=True)
 class Collection:
     id: str
+    type: str
     fraction: Fraction
     timestamp: date
 
@@ -142,7 +143,7 @@ class CommunicationFact:
 @dataclass(frozen=True)
 class AboutPartner:
     url: str
-    logo: list[Image]
+    logos: list[Image]
 
 
 @dataclass(frozen=True)

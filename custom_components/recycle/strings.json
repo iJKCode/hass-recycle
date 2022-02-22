@@ -27,6 +27,7 @@
     "step": {
       "user": {
         "data": {
+          "fractions_filter": "Only show results for the selected fractions",
           "collections_timeframe": "Future collections timeframe [days]",
           "scan_interval": "Update interval [min]"
         }

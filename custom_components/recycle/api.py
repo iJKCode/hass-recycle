@@ -73,11 +73,12 @@ class ApiClient:
         return sorted(
             [Collection(  # @TODO language selection
                 id=collection['id'],
+                type=collection['type'],
                 timestamp=parser.parse(collection['timestamp']).date(),
                 fraction=Fraction(
                     id=collection['fraction']['id'],
-                    name=collection['fraction']['name']['nl'],
-                    logo=[],  # @TODO logos
+                    name=collection['fraction']['name']['nl'],  # @TODO language
+                    logos=[],  # @TODO logos
                     color=collection['fraction']['color'],
                     organisation_id=collection['fraction']['organisation'],
                 )
@@ -86,7 +87,13 @@ class ApiClient:
         )
 
     async def get_fractions(self, info: ApiAddress, *, limit: int = 50, page: int = 1):
-        return await self.get_endpoint('fractions', self._address_params(info), limit, page)
+        fractions_json = await self.get_endpoint('fractions', self._address_params(info), limit, page)
+        return [Fraction(
+            id=fraction['id'],
+            name=fraction['name']['nl'],  # @TODO language
+            logos=[],  # @TODO logos
+            color=fraction['color'],
+        ) for fraction in fractions_json['items']]
 
     async def get_organisations(self, info: ApiAddress):
         return await self.get_endpoint('organisations/' + str(info.zipcode) + '-' + str(info.city_id))
@@ -172,5 +179,6 @@ class ApiClient:
         }
 
     async def _request(self, url: str, *, params=None, headers=None, raise_for_status=True, **kwargs) -> any:
+        params = {k: v for k, v in params.items() if v is not None}
         async with self._session.get(url, params=params, headers=headers, raise_for_status=raise_for_status, **kwargs) as request:
             return await request.json() if request.content else None

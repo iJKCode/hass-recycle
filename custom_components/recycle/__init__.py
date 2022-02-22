@@ -4,11 +4,10 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_LATITUDE,
-    CONF_LONGITUDE
+    CONF_LONGITUDE,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.typing import ConfigType
 
 from .api import ApiClient, ApiAddress
 from .entity import RecycleDataUpdateCoordinator
@@ -18,19 +17,13 @@ from .const import (
     CONF_STREET_ID,
     CONF_HOUSE_NR,
     CONF_COLLECTIONS_TIMEFRAME,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_COLLECTIONS_TIMEFRAME,
+    CONF_FRACTIONS_IGNORE,
+    COLLECTIONS_TIMEFRAME,
     DOMAIN,
     PLATFORMS,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up Recycle! component."""
-    # @TODO: Add setup code.
-    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -47,11 +40,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         latitude=entry.data.get(CONF_LATITUDE),
         longitude=entry.data.get(CONF_LONGITUDE),
     )
-    collections_timeframe = entry.options.get(
-        CONF_COLLECTIONS_TIMEFRAME, DEFAULT_COLLECTIONS_TIMEFRAME
-    )
 
-    coordinator = RecycleDataUpdateCoordinator(hass, api_client=client, api_address=address, collections_timeframe=collections_timeframe)
+    coordinator = RecycleDataUpdateCoordinator(
+        hass, api_client=client, api_address=address,
+        fractions_ignore=entry.options.get(CONF_FRACTIONS_IGNORE, []),
+        collections_timeframe=entry.options.get(CONF_COLLECTIONS_TIMEFRAME),
+    )
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
@@ -64,9 +58,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a Recycle! component from a config entry."""
     _LOGGER.debug('Unloading config entry: %s', entry.title)
+
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         del hass.data[DOMAIN][entry.entry_id]
+
     return unload_ok
 
 
