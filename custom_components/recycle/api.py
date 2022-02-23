@@ -11,7 +11,7 @@ import pytz
 from .api_model import Collection, Fraction
 
 API_URL_BASE = 'https://recycleapp.be/api/app/v1/'
-API_STREET_BASE = 'https://data.vlaanderen.be/id/straatnaam-'
+API_STREET_BASE = 'https://data.vlaanderen.be/id/straatnaam-{}'
 API_X_SECRET = "Crgja3EGWe8jdapyr4EEoMBgZACYYjRRcRpaMQrLDW9HJBvmgkfGQyYqLgeXPavAGvnJqkV87PBB2b8zx43q46sUgzqio4yRZbABhtKeagkVKypTEDjKfPgGycjLyJTtLHYpzwJgp4YmmCuJZN9ZmJY8CGEoFs8MKfdJpU9RjkEVfngmmk2LYD4QzFegLNKUbcCeAdEW"
 API_X_CONSUMER = "recycleapp.be"
 API_USER_AGENT = "Home Assistant"
@@ -96,13 +96,13 @@ class ApiClient:
         ) for fraction in fractions_json['items']]
 
     async def get_organisations(self, info: ApiAddress):
-        return await self.get_endpoint('organisations/' + str(info.zipcode) + '-' + str(info.city_id))
+        return await self.get_endpoint('organisations/{}-{}'.format(info.zipcode, info.city_id))
 
     async def get_communications(self, info: ApiAddress, *, limit: int = 50, page: int = 1):
         return await self.get_endpoint('communications', self._address_params(info), limit, page)
 
     async def get_communication(self, communication_id: str):
-        return await self.get_endpoint('communications/' + communication_id)
+        return await self.get_endpoint('communications/{}'.format(communication_id))
 
     async def get_campaign(self, info: ApiAddress):
         return await self.get_endpoint('communications/campaign', self._address_params(info))
@@ -113,8 +113,8 @@ class ApiClient:
     @staticmethod
     def _address_params(info: ApiAddress):
         return {
-            'zipcodeId': str(info.zipcode) + '-' + str(info.city_id),
-            'streetId': API_STREET_BASE + str(info.street_id),
+            'zipcodeId': '{}-{}'.format(info.zipcode, info.city_id),
+            'streetId': API_STREET_BASE.format(info.street_id),
             'houseNumber': info.house_nr,
         }
 
@@ -133,7 +133,7 @@ class ApiClient:
     def _location_params(info: ApiAddress, radius: int = None):
         has_lat_long = info.latitude is not None and info.longitude is not None
         return {
-            'zipcode': str(info.zipcode) + '-' + str(info.city_id),
+            'zipcode': '{}-{}'.format(info.zipcode, info.city_id),
             'latitude': info.latitude if has_lat_long else None,
             'longitude': info.longitude if has_lat_long else None,
             'radius': radius if has_lat_long else None,
@@ -141,7 +141,7 @@ class ApiClient:
 
     # ------ Endpoint Abstraction ------------------------------------------------ #
 
-    async def get_endpoint(self, endpoint: str, params=None, limit: int = None, page: int = None) -> any:
+    async def get_endpoint(self, endpoint: str, params: dict[str, any] | None = None, limit: int = None, page: int = None) -> any:
         if limit is not None:
             params['size'] = limit if limit < 200 else 200
         if page is not None:
@@ -178,7 +178,7 @@ class ApiClient:
             'X-Consumer': API_X_CONSUMER,
         }
 
-    async def _request(self, url: str, *, params=None, headers=None, raise_for_status=True, **kwargs) -> any:
-        params = {k: v for k, v in params.items() if v is not None}
+    async def _request(self, url: str, *, params: dict[str, any] | None = None, headers=None, raise_for_status=True, **kwargs) -> any:
+        params = {k: v for k, v in params.items() if v is not None} if params else {}
         async with self._session.get(url, params=params, headers=headers, raise_for_status=raise_for_status, **kwargs) as request:
             return await request.json() if request.content else None
