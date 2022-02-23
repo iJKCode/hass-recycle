@@ -10,6 +10,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ApiClient, ApiAddress
+from .api_model import Fraction
 
 from .const import (
     CONF_ZIPCODE,
@@ -32,7 +33,7 @@ async def _validate_address(hass: HomeAssistant, address: ApiAddress) -> bool:
     return await client.validate_address(address)
 
 
-async def _get_fractions(hass: HomeAssistant, address: ApiAddress):
+async def _get_fractions(hass: HomeAssistant, address: ApiAddress) -> list[Fraction]:
     """Get the possible fractions"""
     session = async_get_clientsession(hass)
     client = ApiClient(session)
@@ -101,7 +102,7 @@ class RecycleConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry):
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         return RecycleOptionFlowHandler(config_entry)
 
 

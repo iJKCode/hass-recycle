@@ -1,6 +1,6 @@
 """Recycle! integration calendar."""
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 from homeassistant.components.calendar import CalendarEventDevice
 from homeassistant.config_entries import ConfigEntry
@@ -33,7 +33,7 @@ class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
     @property
     def event(self):
         collections = self.coordinator.collections
-        return self._make_event(collections[1]) if collections else None
+        return self._make_event(collections[0]) if collections else None
 
     async def async_get_events(self, hass, start_date: date, end_date: date) -> list[dict[str, any]]:
         _LOGGER.debug(
@@ -53,11 +53,12 @@ class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
 
     @staticmethod
     def _make_event(collection: Collection) -> dict[str, any]:
-        event_date = {'date': collection.timestamp.strftime(DATE_STR_FORMAT)}
+        start_date = collection.timestamp
+        end_date = collection.timestamp + timedelta(days=1)
         return {
             'uid': collection.id,
             'summary': collection.fraction.name,
-            'start': event_date,
-            'end': event_date,
+            'start': {'date': start_date.strftime(DATE_STR_FORMAT)},
+            'end': {'date': end_date.strftime(DATE_STR_FORMAT)},
             'allDay': True,
         }
