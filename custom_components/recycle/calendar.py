@@ -6,7 +6,6 @@ from homeassistant.components.calendar import CalendarEventDevice
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util.dt import DATE_STR_FORMAT
 
 from .api_model import Collection
 from .const import DOMAIN
@@ -28,17 +27,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
     def __init__(self, coordinator):
-        super().__init__(coordinator, suffix='Collections', unique_id='collections')
+        super().__init__(coordinator, name_suffix='Collections', id_suffix='collections')
+        self._collection = self.coordinator.collections[0] if self.coordinator.collections else None
+
+    def _handle_coordinator_update(self) -> None:
+        self._collection = self.coordinator.collections[0] if self.coordinator.collections else None
+        super()._handle_coordinator_update()
 
     @property
     def event(self):
-        collections = self.coordinator.collections
-        return self._make_event(collections[0]) if collections else None
+        return self._make_event(self._collection) if self._collection else None
 
     async def async_get_events(self, hass, start_date: date, end_date: date) -> list[dict[str, any]]:
         _LOGGER.debug(
             'Fetching calendar events for %s between %s and %s',
-            self.entity_id, start_date.strftime(DATE_STR_FORMAT), end_date.strftime(DATE_STR_FORMAT)
+            self.entity_id, start_date.isoformat(), end_date.isoformat()
         )
 
         address = self.coordinator.api_address
@@ -53,12 +56,13 @@ class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
 
     @staticmethod
     def _make_event(collection: Collection) -> dict[str, any]:
+        title = collection.fraction.name
         start_date = collection.timestamp
         end_date = collection.timestamp + timedelta(days=1)
         return {
             'uid': collection.id,
-            'summary': collection.fraction.name,
-            'start': {'date': start_date.strftime(DATE_STR_FORMAT)},
-            'end': {'date': end_date.strftime(DATE_STR_FORMAT)},
+            'summary': title.capitalize() if title.islower() else title,
+            'start': {'date': start_date.isoformat()},
+            'end': {'date': end_date.isoformat()},
             'allDay': True,
         }
