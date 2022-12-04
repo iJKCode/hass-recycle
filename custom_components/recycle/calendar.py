@@ -2,14 +2,14 @@
 import logging
 from datetime import date, timedelta
 
-from homeassistant.components.calendar import CalendarEventDevice
+from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api_model import Collection
 from .const import DOMAIN
-from .entity import RecycleCoordinatorEntity
+from .coordinator import RecycleCoordinatorEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,12 +20,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([
-        RecycleCalendarDevice(coordinator)
+        RecycleCalendar(coordinator)
     ])
     return True
 
 
-class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
+class RecycleCalendar(RecycleCoordinatorEntity, CalendarEntity):
     def __init__(self, coordinator):
         super().__init__(coordinator, name_suffix='Collections', id_suffix='collections')
         self._collection = self.coordinator.collections[0] if self.coordinator.collections else None
@@ -38,7 +38,7 @@ class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
     def event(self):
         return self._make_event(self._collection) if self._collection else None
 
-    async def async_get_events(self, hass, start_date: date, end_date: date) -> list[dict[str, any]]:
+    async def async_get_events(self, hass, start_date: date, end_date: date) -> list[CalendarEvent]:
         _LOGGER.debug(
             'Fetching calendar events for %s between %s and %s',
             self.entity_id, start_date.isoformat(), end_date.isoformat()
@@ -55,14 +55,10 @@ class RecycleCalendarDevice(RecycleCoordinatorEntity, CalendarEventDevice):
         ]
 
     @staticmethod
-    def _make_event(collection: Collection) -> dict[str, any]:
+    def _make_event(collection: Collection) -> CalendarEvent:
         title = collection.fraction.name
-        start_date = collection.timestamp
-        end_date = collection.timestamp + timedelta(days=1)
-        return {
-            'uid': collection.id,
-            'summary': title.capitalize() if title.islower() else title,
-            'start': {'date': start_date.isoformat()},
-            'end': {'date': end_date.isoformat()},
-            'allDay': True,
-        }
+        return CalendarEvent(
+            summary=title.capitalize() if title.islower() else title,
+            start=collection.timestamp,
+            end=collection.timestamp + timedelta(days=1),
+        )

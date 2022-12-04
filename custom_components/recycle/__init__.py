@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ApiClient, ApiAddress
-from .entity import RecycleDataUpdateCoordinator
+from .coordinator import RecycleDataUpdateCoordinator
 from .const import (
     CONF_ZIPCODE,
     CONF_CITY_ID,
@@ -67,6 +67,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Update Recycle! component options"""
+    """Update Recycle! component options."""
     _LOGGER.debug('Updating config options: %s', entry.title)
     await hass.config_entries.async_reload(entry.entry_id)

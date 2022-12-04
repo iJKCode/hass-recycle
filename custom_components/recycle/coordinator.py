@@ -9,7 +9,7 @@ from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
 from .api import ApiClient, ApiAddress
-from .api_model import Collection, Fraction, Communication
+from .api_model import Collection, Fraction
 from .const import (
     COLLECTIONS_TIMEFRAME,
     DOMAIN,

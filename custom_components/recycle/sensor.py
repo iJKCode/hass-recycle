@@ -13,7 +13,7 @@ from homeassistant.helpers.typing import StateType
 
 from .api_model import Collection, Fraction
 from .const import DOMAIN, CONF_FRACTIONS_IGNORE, FORECAST_SENSOR_COUNT
-from .entity import RecycleCoordinatorEntity, RecycleDataUpdateCoordinator
+from .coordinator import RecycleCoordinatorEntity, RecycleDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
